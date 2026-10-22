@@ -59,3 +59,11 @@ export interface ExecutedOrder {
   status: "FILLED" | "REJECTED";
   timestamp: number;
 }
+
+// One entry of the feed's initial SNAPSHOT frame: a tick plus instrument metadata.
+export interface SnapshotEntry extends PriceTick {
+  name: string;
+  type: InstrumentType;
+  decimals: number;
+  pipSize: string;
+}

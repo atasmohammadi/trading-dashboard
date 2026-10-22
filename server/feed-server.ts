@@ -42,6 +42,10 @@ wss.on("connection", (ws: WebSocket) => {
     const s = state.get(inst.symbol)!;
     return {
       symbol: inst.symbol,
+      name: inst.name,
+      type: inst.type,
+      decimals: inst.decimals,
+      pipSize: inst.pipSize,
       bid: s.bid.toFixed(inst.decimals),
       ask: s.ask.toFixed(inst.decimals),
       ts: Date.now(),
