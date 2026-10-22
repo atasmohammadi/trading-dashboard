@@ -7,6 +7,14 @@ const TICKS_PER_SECOND = parseInt(process.env.TICK_RATE || "400", 10);
 const SIMULATE_DROPS = process.env.SIMULATE_DROPS === "true";
 const OUT_OF_ORDER_RATE = parseFloat(process.env.OUT_OF_ORDER_RATE || "0.02"); // 2% out-of-order ticks
 
+// Maximum per-tick move as a fraction of price, by instrument class
+const VOLATILITY: Record<string, number> = {
+  forex: 0.00003,
+  crypto: 0.0004,
+  commodity: 0.0002,
+  index: 0.0002
+};
+
 const instruments = generate200Instruments();
 console.log(`[Feed Server] Loaded ${instruments.length} instruments.`);
 
@@ -71,8 +79,9 @@ setInterval(() => {
   const inst = instruments[idx];
   const s = state.get(inst.symbol)!;
 
-  // Random walk delta (-0.05% to +0.05%)
-  const percentDelta = (Math.random() - 0.499) * 0.0008;
+  // Random walk step scaled to the instrument class. A flat 0.04% step moves EURUSD ~4 pips per tick,
+  // which would trip the 2-pip slippage tolerance on almost every order.
+  const percentDelta = (Math.random() - 0.5) * 2 * VOLATILITY[inst.type];
   const newBid = s.bid.times(new Decimal(1).plus(percentDelta));
   const newAsk = newBid.plus(s.spread);
 
