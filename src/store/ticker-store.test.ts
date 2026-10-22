@@ -35,6 +35,19 @@ describe("ticker store", () => {
     expect(summary.openPrice).toBe("1.08412");
   });
 
+  it("keeps the session open price and history when the feed reconnects", async () => {
+    const store = useTickerStore.getState();
+    store.ingestTick({ symbol: "EURUSD", bid: "1.08420", ask: "1.08423", ts: 2, seq: 101 });
+    await nextFrame();
+
+    store.initSnapshot([entry("EURUSD", "1.08500", "1.08503", 500)]);
+
+    const summary = useTickerStore.getState().summaries["EURUSD"];
+    expect(summary.openPrice).toBe("1.08412");
+    expect(summary.history).toEqual(["1.08412", "1.08420", "1.08500"]);
+    expect(summary.changePercent).not.toBe("0.00%");
+  });
+
   it("drops a tick whose seq is not newer than the last committed seq", async () => {
     useTickerStore.getState().ingestTick({ symbol: "EURUSD", bid: "1.08420", ask: "1.08423", ts: 2, seq: 101 });
     await nextFrame();

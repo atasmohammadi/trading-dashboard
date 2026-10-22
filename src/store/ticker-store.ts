@@ -70,9 +70,16 @@ export const useTickerStore = create<TickerState>((set, get) => ({
     const summaries: Record<string, InstrumentSummary> = {};
     const symbolsList: string[] = [];
 
+    // A reconnect delivers a fresh snapshot. Keep the session open price and sparkline history
+    // so "change since open" does not reset every time the socket drops.
+    const previous = get().summaries;
+
     for (const e of entries) {
       symbolsList.push(e.symbol);
-      const { changeAbs, changePercent, isPositive } = calculateChange(e.bid, e.bid);
+      const prev = previous[e.symbol];
+      const openPrice = prev?.openPrice ?? e.bid;
+      const history = prev ? [...prev.history.slice(-19), e.bid] : [e.bid];
+      const { changeAbs, changePercent, isPositive } = calculateChange(e.bid, openPrice);
       summaries[e.symbol] = {
         symbol: e.symbol,
         name: e.name,
@@ -82,11 +89,11 @@ export const useTickerStore = create<TickerState>((set, get) => ({
         bid: e.bid,
         ask: e.ask,
         spread: calculateSpread(e.ask, e.bid, e.decimals),
-        openPrice: e.bid,
+        openPrice,
         changeAbs,
         changePercent,
         isPositive,
-        history: [e.bid],
+        history,
         lastUpdated: e.ts,
         lastSeq: e.seq
       };
